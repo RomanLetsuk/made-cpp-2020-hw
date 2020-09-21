@@ -44,11 +44,11 @@ bool checkNormal(uint64_t number) {
 }
 
 bool checkForPlusNormal (uint64_t number) {
-    return checkNormal(number) && !getBit(number, 61);
+    return checkNormal(number) && !getBit(number, 63);
 }
 
 bool checkForMinusNormal (uint64_t number) {
-    return checkNormal(number) && getBit(number, 61);
+    return checkNormal(number) && getBit(number, 63);
 }
 
 bool checkDenormal(uint64_t number) {
@@ -56,11 +56,11 @@ bool checkDenormal(uint64_t number) {
 }
 
 bool checkForPlusDenormal (uint64_t number) {
-    return checkDenormal(number) && !getBit(number, 61);
+    return checkDenormal(number) && !getBit(number, 63);
 }
 
 bool checkForMinusDenormal (uint64_t number) {
-    return checkDenormal(number) && getBit(number, 61);
+    return checkDenormal(number) && getBit(number, 63);
 }
 
 bool checkForSignalingNan (uint64_t number) {
