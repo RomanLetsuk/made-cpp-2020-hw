@@ -70,6 +70,7 @@ Matrix operator*(const double& a, const Matrix& b);
 std::ostream& operator<<(std::ostream& output, const Matrix& matrix);
 std::istream& operator>>(std::istream& input, Matrix& matrix);
 
+double calc_det(Matrix matrix);
 
 
 }  // namespace task

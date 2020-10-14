@@ -203,7 +203,7 @@ double Matrix::det() const {
     throw SizeMismatchException();
   }
 
-  return 0;
+  return calc_det(*this);
 }
 
 void Matrix::transpose() {
@@ -227,7 +227,12 @@ double Matrix::trace() const {
     throw SizeMismatchException();
   }
 
-  return 0;
+  double result = 0;
+  for (size_t i = 0; i < rows; ++i) {
+    result += *(data + cols * i + i);
+  }
+
+  return result;
 }
 
 std::vector<double> Matrix::getRow(size_t row) {
@@ -315,4 +320,38 @@ std::istream& task::operator>>(std::istream& input, Matrix& matrix) {
   }
 
   return input;
+}
+
+double task::calc_det(Matrix matrix) {
+  double det = 0;
+  size_t rows = matrix.get_rows();
+  size_t cols = matrix.get_columns();
+
+  if (rows == 1) {
+    return matrix[0][0];
+  }
+
+  if (rows == 2) {
+    return matrix[0][0] * matrix[1][1] - matrix[0][1] * matrix[1][0];
+  }
+
+  Matrix submatrix(rows - 1, cols - 1);
+
+  size_t currentColumn = 0;
+  for (size_t i = 0; i < cols; ++i) {
+    for (size_t j = 0; j < cols; ++j) {
+      if (i == j) {
+        continue;
+      }
+
+      for (size_t k = 1; k < rows; ++k) {
+        submatrix[k - 1][currentColumn] = matrix[k][j];
+      }
+
+      ++currentColumn;
+    }
+
+    det += pow(-1, i) * matrix[0][i] * calc_det(submatrix);
+  }
+  return det;
 }
