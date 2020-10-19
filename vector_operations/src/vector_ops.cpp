@@ -5,14 +5,14 @@
 using std::vector;
 double EPS = 1E-7;
 
-void swap(double *a, double *b) {
-  double temp = *a;
-  *a = *b;
-  *b = temp;
+void swap(double& a, double& b) {
+  double temp = a;
+  a = b;
+  b = temp;
 }
 
 namespace task {
-  vector<double> operator +(vector<double> a, vector<double> b) {
+  vector<double> operator+(vector<double> a, vector<double> b) {
     size_t size = a.size();
     vector<double> result(size);
 
@@ -23,7 +23,7 @@ namespace task {
     return result;
   }
 
-  vector<double> operator -(vector<double> a, vector<double> b) {
+  vector<double> operator-(vector<double> a, vector<double> b) {
     size_t size = a.size();
     vector<double> result(size);
 
@@ -34,7 +34,7 @@ namespace task {
     return result;
   }
 
-  vector<double> operator +(vector<double> a) {
+  vector<double> operator+(vector<double> a) {
     size_t size = a.size();
     vector<double> result(size);
 
@@ -45,7 +45,7 @@ namespace task {
     return result;
   }
 
-  vector<double> operator -(vector<double> a) {
+  vector<double> operator-(vector<double> a) {
     size_t size = a.size();
     vector<double> result(size);
 
@@ -56,7 +56,7 @@ namespace task {
     return result;
   }
 
-  double operator *(vector<double> a, vector<double> b) {
+  double operator*(vector<double> a, vector<double> b) {
     size_t size = a.size();
     double result = 0;
 
@@ -67,7 +67,7 @@ namespace task {
     return result;
   }
 
-  vector<double> operator %(vector<double> a, vector<double> b) {
+  vector<double> operator%(vector<double> a, vector<double> b) {
     size_t size = a.size();
     vector<double> result(size);
 
@@ -78,30 +78,34 @@ namespace task {
     return result;
   }
 
-  bool operator ||(vector<double> a, vector<double> b) {
+  bool operator||(vector<double> a, vector<double> b) {
     size_t size = a.size();
     bool result = true;
 
-    for (size_t i = 0; i < size; i++) {
-      if (a[i] == 0 || b[i] == 0) {
-        return false;
-      }
-    }
-
     for (size_t i = 1; i < size; i++) {
-      result &= fabs(a[i - 1] / b[i - 1] - a[i] / b[i]) < EPS;
+      result &= fabs(a[i - 1] * b[i] - a[i] * b[i - 1]) < EPS;
     }
 
     return result;
   }
 
-  bool operator &&(vector<double> a, vector<double> b) {
-    return a || b
-      ? a[0] / b[0] > 0
-      : false;
+  bool operator&&(vector<double> a, vector<double> b) {
+    if (!(a || b)) {
+      return false;
+    }
+
+    size_t size = a.size();
+
+    for (size_t i = 0; i < size; i++) {
+      if (a[i] != 0 && b[i] != 0) {
+        return a[i] / b[i] > 0;
+      }
+    }
+
+    return true;
   }
 
-  std::istream& operator >>(std::istream &in, vector<double> &v) {
+  std::istream& operator>>(std::istream &in, vector<double> &v) {
     size_t size;
     in >> size;
     v.resize(size);
@@ -113,7 +117,7 @@ namespace task {
     return in;
   }
 
-  std::ostream& operator <<(std::ostream &out, vector<double> &v) {
+  std::ostream& operator<<(std::ostream &out, vector<double> &v) {
     size_t size = v.size();
 
     for (size_t i = 0; i < size; i++) {
@@ -127,11 +131,11 @@ namespace task {
     size_t size = a.size();
 
     for (size_t i = 0; i < size / 2; i++) {
-      swap(&a[i], &a[size - i - 1]);
+      swap(a[i], a[size - i - 1]);
     }
   }
 
-  vector<int> operator |(vector<int> a, vector<int> b) {
+  vector<int> operator|(vector<int> a, vector<int> b) {
     size_t size = a.size();
     vector<int> result(size);
 
@@ -142,7 +146,7 @@ namespace task {
     return result;
   }
 
-  vector<int> operator &(vector<int> a, vector<int> b) {
+  vector<int> operator&(vector<int> a, vector<int> b) {
     size_t size = a.size();
     vector<int> result(size);
 
