@@ -173,21 +173,18 @@ bool Polygon::operator!=(const Shape& shape) const {
   return !(*this == shape);
 }
 
-Ellipse::Ellipse(Point f1, Point f2, double sum) : f1(f1), f2(f2) {
+Ellipse::Ellipse(Point f1, Point f2, double sum) : points({f1, f2}) {
   a = sum / 2;
   double square_distance = (pow(f2.x - f1.x, 2) + pow(f2.y - f1.y, 2)) / 4;
   b = sqrt(a * a - square_distance);
 }
 
 vector<Point>& Ellipse::getPoints() {
-  vector<Point>* result = new vector<Point>();
-  result->push_back(f1);
-  result->push_back(f2);
-  return *result;
+  return points;
 }
 
 const std::pair<Point, Point> Ellipse::focuses() const {
-  return std::make_pair(f1, f2);
+  return std::make_pair(points[0], points[1]);
 }
 
 double Ellipse::eccentricity() const {
@@ -203,26 +200,30 @@ double Ellipse::area() const {
   return PI * a * b;
 }
 
+void Ellipse::scale(Point center, double coefficient) {
+  Shape::scale(center, coefficient);
+  a = fabs(a * coefficient);
+  b = fabs(b * coefficient);
+}
+
 bool Ellipse::operator==(const Shape& shape) const {
   const Ellipse* ellipse = dynamic_cast<const Ellipse*>(&shape);
 
   return ellipse != NULL
-    && perimeter() == ellipse->perimeter()
-    && area() == ellipse->area();
+    && (perimeter() - ellipse->perimeter()) < EPS
+    && (area() - ellipse->area()) < EPS;
 }
 
 bool Ellipse::operator!=(const Shape& shape) const {
   return !(*this == shape);
 }
 
-Circle::Circle(Point center, double r) : Ellipse(center, center, 2 * r), c(center) {
+Circle::Circle(Point center, double r) : Ellipse(center, center, 2 * r), points({center}) {
   this->r = r;
 }
 
 vector<Point>& Circle::getPoints() {
-  vector<Point>* result = new vector<Point>();
-  result->push_back(c);
-  return *result;
+  return points;
 }
 
 double Circle::radius() const {
@@ -230,15 +231,20 @@ double Circle::radius() const {
 }
 
 const Point Circle::center() const {
-  return c;
+  return points[0];
+}
+
+void Circle::scale(Point center, double coefficient) {
+  Ellipse::scale(center, coefficient);
+  r = fabs(r * coefficient);
 }
 
 bool Circle::operator==(const Shape& shape) const {
   const Circle* circle = dynamic_cast<const Circle*>(&shape);
 
   return circle != NULL
-    && perimeter() == circle->perimeter()
-    && area() == circle->area();
+    && (perimeter() - circle->perimeter()) < EPS
+    && (area() - circle->area()) < EPS;
 }
 
 bool Circle::operator!=(const Shape& shape) const {
@@ -329,6 +335,16 @@ bool Square::operator!=(const Shape& shape) const {
 
 Triangle::Triangle(Point a, Point b, Point c) : Polygon({a, b, c}) { }
 
+double Triangle::area() const {
+  auto points = getVertices();
+  double a = sqrt(pow(points[0].x - points[1].x, 2) + pow(points[0].y - points[1].y, 2));
+  double b = sqrt(pow(points[1].x - points[2].x, 2) + pow(points[1].y - points[2].y, 2));
+  double c = sqrt(pow(points[2].x - points[0].x, 2) + pow(points[2].y - points[0].y, 2));
+
+  double p = (a + b + c) / 2;
+  return sqrt(p * (p - a) * (p - b) * (p - c));
+}
+
 Circle Triangle::circumscribedCircle() const {
   auto points = getVertices();
   Line a(points[0], points[1]);
@@ -346,7 +362,7 @@ Circle Triangle::circumscribedCircle() const {
 }
 
 Circle Triangle::inscribedCircle() const {
-  double radius = area() / perimeter();
+  double radius = 2 * area() / perimeter();
   auto points = getVertices();
   double a = sqrt(pow(points[0].x - points[1].x, 2) + pow(points[0].y - points[1].y, 2));
   double b = sqrt(pow(points[1].x - points[2].x, 2) + pow(points[1].y - points[2].y, 2));
@@ -356,8 +372,8 @@ Circle Triangle::inscribedCircle() const {
 
   Line bis1(points[0], points[2]);
   Line bis2(points[1], points[2]);
-  bis1.rotate(points[0], betta / 2);
-  bis2.rotate(points[2], alpha / 2);
+  bis1.rotate(points[0], -betta / 2);
+  bis2.rotate(points[2], -alpha / 2);
 
   double x = (bis2.b - bis1.b) / (bis1.k - bis2.k);
   double y = bis1.k * x + bis1.b;
@@ -366,19 +382,46 @@ Circle Triangle::inscribedCircle() const {
 }
 
 Point Triangle::centroid() const {
-  throw "not implemented";
+  auto points = getVertices();
+  Line med1(points[0], Point((points[1].x + points[2].x) / 2, (points[1].y + points[2].y) / 2));
+  Line med2(points[1], Point((points[0].x + points[2].x) / 2, (points[0].y + points[2].y) / 2));
+
+  double x = (med2.b - med1.b) / (med1.k - med2.k);
+  double y = med1.k * x + med1.b;
+
+  return Point(x, y);
 }
 
 Point Triangle::orthocenter() const {
-  throw "not implemented";
+  auto points = getVertices();
+  Line a(points[0], points[1]);
+  Line b(points[0], points[2]);
+
+  Point sim_a(points[2].x, points[2].y);
+  Point sim_b(points[1].x, points[1].y);
+
+  Polygon pol1({sim_a});
+  pol1.reflex(a);
+  Polygon pol2({sim_b});
+  pol2.reflex(b);
+
+  Line ver1(points[2], pol1.getVertices()[0]);
+  Line ver2(points[1], pol2.getVertices()[0]);
+
+  double x = (ver2.b - ver1.b) / (ver1.k - ver2.k);
+  double y = ver1.k * x + ver1.b;
+
+  return Point(x, y);
 }
 
 Line Triangle::EulerLine() const {
-  throw "not implemented";
+  return Line(centroid(), orthocenter());
 }
 
 Circle Triangle::ninePointsCircle() const {
-  throw "not implemented";
+  Circle circumscribed = circumscribedCircle();
+  Point orth = orthocenter();
+  return Circle(Point((circumscribed.center().x + orth.x) / 2, (circumscribed.center().y + orth.y) / 2), circumscribed.radius() / 2);
 }
 
 bool Triangle::operator==(const Shape& shape) const {

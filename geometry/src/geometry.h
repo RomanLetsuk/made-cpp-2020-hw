@@ -59,10 +59,9 @@ public:
 
 class Ellipse : public Shape {
 private:
-  Point f1;
-  Point f2;
   double a;
   double b;
+  std::vector<Point> points;
 protected:
   std::vector<Point>& getPoints() override;
 public:
@@ -71,20 +70,22 @@ public:
   double eccentricity() const;
   double perimeter() const override;
   double area() const override;
+  void scale(Point center, double coefficient);
   bool operator==(const Shape&) const override;
   bool operator!=(const Shape&) const override;
 };
 
 class Circle : public Ellipse {
 private:
-  Point c;
   double r;
+  std::vector<Point> points;
 protected:
   std::vector<Point>& getPoints() override;
 public:
   Circle(Point center, double radius);
   double radius() const;
   const Point center() const;
+  void scale(Point center, double coefficient);
   bool operator==(const Shape&) const override;
   bool operator!=(const Shape&) const override;
 };
@@ -112,6 +113,7 @@ public:
 class Triangle : public Polygon {
 public:
   Triangle(Point, Point, Point);
+  double area() const override;
   Circle circumscribedCircle() const;
   Circle inscribedCircle() const;
   Point centroid() const;
