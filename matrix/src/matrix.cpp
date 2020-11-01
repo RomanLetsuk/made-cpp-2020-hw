@@ -158,7 +158,7 @@ Matrix Matrix::operator*(const Matrix& a) const {
 
   Matrix result(rows, a.cols);
   for (size_t i = 0; i < rows; ++i) {
-    for (size_t j = 0; j < cols; ++j) {
+    for (size_t j = 0; j < a.cols; ++j) {
       result[i][j] = 0;
       for (size_t k = 0; k < cols; ++k) {
         result[i][j] += *(data + cols * i + k) * a[k][j];
@@ -171,7 +171,8 @@ Matrix Matrix::operator*(const Matrix& a) const {
 
 Matrix Matrix::operator*(const double& a) const {
   Matrix temp = *this;
-  return temp *= a;
+  temp *= a;
+  return temp;
 }
 
 Matrix Matrix::operator-() const {
@@ -288,7 +289,7 @@ Matrix::~Matrix() {
 }
 
 Matrix task::operator*(const double& a, const Matrix& b) {
-  return b;
+  return b * a;
 }
 
 std::ostream& task::operator<<(std::ostream& output, const Matrix& matrix) {
@@ -337,21 +338,18 @@ double task::calc_det(Matrix matrix) {
 
   Matrix submatrix(rows - 1, cols - 1);
 
-  size_t currentColumn = 0;
-  for (size_t i = 0; i < cols; ++i) {
-    for (size_t j = 0; j < cols; ++j) {
-      if (i == j) {
-        continue;
-      }
+  for (size_t currentColumn = 0; currentColumn < cols; ++currentColumn) {
+    for (size_t i = 1; i < rows; ++i) {
+      for (size_t j = 0; j < cols; ++j) {
+        if (j == currentColumn) {
+          continue;
+        }
 
-      for (size_t k = 1; k < rows; ++k) {
-        submatrix[k - 1][currentColumn] = matrix[k][j];
+        submatrix[i - 1][j < currentColumn ? j : j - 1] = matrix[i][j];
       }
-
-      ++currentColumn;
     }
 
-    det += pow(-1, i) * matrix[0][i] * calc_det(submatrix);
+    det += pow(-1, currentColumn) * matrix[0][currentColumn] * calc_det(submatrix);
   }
   return det;
 }
