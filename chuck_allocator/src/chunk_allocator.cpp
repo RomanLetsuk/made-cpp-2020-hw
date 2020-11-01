@@ -6,13 +6,16 @@ using std::list;
 
 class Chunk {
 private:
-  const int maxSize = 1024;
-  int currentPointer = 0;
+  static const size_t maxSize = 1024;
+  size_t currentPointer = 0;
   uint8_t* data;
 public:
   Chunk* prev;
+  int linksCount;
 
-  Chunk() : data(new uint8_t[maxSize]), prev(nullptr) { }
+  Chunk() : data(new uint8_t[maxSize]), prev(nullptr) {
+    linksCount = 1;
+  }
 
   Chunk(Chunk* prev) : Chunk() {
     this->prev = prev;
@@ -25,7 +28,7 @@ public:
 
   void* allocate(size_t n) {
     if (n > maxSize) {
-      throw "Unpossible allocate memory";
+      throw std::bad_alloc();
     }
 
     void* result = data + currentPointer;
@@ -41,9 +44,16 @@ public:
 template< class T>
 class ChunkAllocator {
 private:
-  int linksCount;
-  int* linksCountPtr;
   Chunk* chunks;
+
+  void inscreaseChunkLinks() {
+    auto currentChunk = chunks;
+
+    while (currentChunk != nullptr) {
+      currentChunk->linksCount++;
+      currentChunk = currentChunk->prev;
+    }
+  }
 public:
   using value_type = T;
   using pointer = T*;
@@ -55,31 +65,27 @@ public:
 
   template< class U > struct rebind { typedef ChunkAllocator<U> other; };
 
-  ChunkAllocator() : chunks(nullptr) {
-    linksCount = 1;
-    linksCountPtr = &linksCount;
-  }
+  ChunkAllocator() : chunks(nullptr) { }
 
   ChunkAllocator(ChunkAllocator<T>& allocator) {
-    linksCountPtr = allocator.linksCountPtr;
-    (*linksCountPtr)++;
     chunks = allocator.chunks;
+    inscreaseChunkLinks();
   }
 
   ChunkAllocator& operator=(ChunkAllocator<T>& allocator) {
-    linksCountPtr = allocator.linksCountPtr;
-    (*linksCountPtr)++;
     chunks = allocator.chunks;
+    inscreaseChunkLinks();
 
     return *this;
   }
 
   pointer allocate(size_type n) {
+    const size_type totalSize = n * sizeof(T);
     auto currentChunk = chunks;
 
     while (currentChunk != nullptr) {
-      if (currentChunk->couldAllocate(n * sizeof(T))) {
-        return (pointer)currentChunk->allocate(n * sizeof(T));
+      if (currentChunk->couldAllocate(totalSize)) {
+        return (pointer)currentChunk->allocate(totalSize);
       }
 
       currentChunk = currentChunk->prev;
@@ -87,14 +93,14 @@ public:
 
     auto newChunk = new Chunk(chunks);
     chunks = newChunk;
-    return (pointer)chunks->allocate(n * sizeof(T));
+    return (pointer)chunks->allocate(totalSize);
   }
 
   void deallocate(pointer p, size_type n) { }
 
   template< class... Args>
   void construct(pointer p,  Args&&... args) {
-    new (p) T(args...);
+    new (p) T(std::forward<T>(args...));
   }
 
   void destroy(pointer p) {
@@ -102,18 +108,22 @@ public:
   }
 
   ~ChunkAllocator() {
-    if (*linksCountPtr == 1) {
-      auto currentChunk = chunks;
+    auto currentChunk = chunks;
 
-      while (currentChunk != nullptr) {
-        auto temp = currentChunk;
-        currentChunk = currentChunk->prev;
+    while (currentChunk != nullptr) {
+      auto temp = currentChunk;
+      currentChunk = currentChunk->prev;
 
+      if (temp->linksCount == 1) {
         temp->deallocate();
         delete temp;
+      } else {
+        temp->linksCount--;
+
+        if (currentChunk->linksCount == 1) {
+          temp->prev = nullptr;
+        }
       }
     }
-
-    (*linksCountPtr)--;
   }
 };
