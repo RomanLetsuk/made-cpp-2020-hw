@@ -8,7 +8,12 @@ namespace task {
 template<class T, class Alloc = std::allocator<T>>
 class list {
 
+private:
+    class Node;
+
 public:
+    class const_iterator;
+
     class iterator {
     public:
         using difference_type = ptrdiff_t;
@@ -17,33 +22,74 @@ public:
         using reference = T&;
         using iterator_category = std::bidirectional_iterator_tag;
 
+        friend class const_iterator;
+        friend class list;
+
         iterator();
         iterator(const iterator&);
+        iterator(Node* node);
         iterator& operator=(const iterator&);
 
         iterator& operator++();
         iterator operator++(int);
+        iterator operator+(int);
         reference operator*() const;
         pointer operator->() const;
         iterator& operator--();
         iterator operator--(int);
+        iterator operator-(int);
 
         bool operator==(iterator other) const;
         bool operator!=(iterator other) const;
 
-        // Your code goes here?..
+        operator const_iterator() {
+            return const_iterator(_node);
+        }
 
     private:
-        // Your code hoes here...
+        list::Node* _node;
     };
 
     class const_iterator {
-        // Your code goes here...
+    public:
+        using difference_type = ptrdiff_t;
+        using value_type = T;
+        using pointer = T*;
+        using reference = T&;
+        using iterator_category = std::bidirectional_iterator_tag;
+
+        friend class list;
+
+        const_iterator();
+        const_iterator(Node* node);
+        const_iterator& operator=(const iterator&);
+
+        const_iterator& operator++();
+        const_iterator operator++(int);
+        const_iterator operator+(int);
+        reference operator*() const;
+        pointer operator->() const;
+        const_iterator& operator--();
+        const_iterator operator--(int);
+        const_iterator operator-(int);
+
+        bool operator==(const_iterator other) const;
+        bool operator!=(const_iterator other) const;
+
+    private:
+        list::Node* _node;
     };
 
+    using value_type = T;
+    using allocator_type = Alloc;
+    using size_type = std::size_t;
+    using difference_type = std::ptrdiff_t;
+    using reference = value_type&;
+    using const_reference = const value_type&;
+    using pointer = typename std::allocator_traits<Alloc>::pointer;
+    using const_pointer = typename std::allocator_traits<Alloc>::const_pointer;
     using reverse_iterator = std::reverse_iterator<iterator>;
     using const_reverse_iterator = std::reverse_iterator<const_iterator>;
-
 
     list();
     explicit list(const Alloc& alloc);
@@ -121,14 +167,36 @@ public:
     void unique();
     void sort();
 
-    // Your code goes here?..
-
 private:
+    class Node {
+    public:
+        pointer value;
+        Node* prev;
+        Node* next;
 
-    // Your code goes here...
+        Node() : value(nullptr), prev(nullptr), next(nullptr) {}
 
+        Node(Node* prev) { }
+
+        Node(Node* prev, Node* next) {
+            this->prev = prev;
+            this->next = next;
+        }
+
+        Node(pointer value, Node* prev, Node* next) : Node(prev, next) {
+            this->value = value;
+        }
+    };
+
+    size_t _size;
+    Node* _head;
+    Node* _tail;
+    allocator_type _allocator;
+
+    void swap(Node*, Node*);
+    size_type split(size_type, size_type, T);
+    size_type split_equal(size_type, size_type, T);
+    void quick_sort(size_type l, size_type r);
 };
-
-// Your template function definitions may go here...
 
 }  // namespace task
